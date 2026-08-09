@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NZ Outdoors - Store & Form 43A Generator</title>
-    <!-- Include PDF-lib for exact coordinate text stamping -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         :root {
@@ -237,12 +236,11 @@
         </div>
 
         <div class="alert-box" style="background:#fff; border: 2px solid var(--secondary);">
-            <h4 style="margin-top:0; color:var(--primary);">Final Steps:</h4>
+            <h4 style="margin-top:0; color:var(--primary);">Final Steps to Complete Your Order:</h4>
             <ol style="margin-bottom:0; padding-left:20px; line-height:1.7;">
                 <li><strong>Print</strong> the downloaded PDF (both pages).</li>
-                <li><strong>Sign</strong> the Applicant's Declaration on Page 2 in pen.</li>
-                <li><strong>Visit</strong> a Police Station with the printed form and your physical Firearms Licence.</li>
-                <li>The Police will process the form and email us the approval so we can dispatch your order.</li>
+                <li><strong>Sign</strong> and date the bottom of Page 2 in pen.</li>
+                <li><strong>Hand it in</strong> to a Police Station along with your physical Firearms Licence. The Police will process it and email us directly to release your order.</li>
             </ol>
         </div>
 
@@ -253,10 +251,12 @@
 
 <script>
     // --- AMMUNITION CART DATA ---
+    // Added a 4th dummy item to test Page 1 & Page 2 overflow printing
     const products = [
-        { id: 'p1', name: 'Hornady Custom .308 Win 150gr', type: 'Rifle', make: 'Hornady', calibre: '.308 Winchester', boxSize: 50, price: 65.00, qty: 1 },
+        { id: 'p1', name: 'Hornady Custom .308 Win 150gr', type: 'Rifle', make: 'Hornady', calibre: '.308 Win', boxSize: 50, price: 65.00, qty: 1 },
         { id: 'p2', name: 'Federal Target 12G Buckshot', type: 'Shotgun', make: 'Federal', calibre: '12 Gauge', boxSize: 25, price: 32.00, qty: 0 },
-        { id: 'p3', name: 'Sellier & Bellot 9mm Luger FMJ', type: 'Pistol', make: 'Sellier & Bellot', calibre: '9mm Luger', boxSize: 50, price: 38.00, qty: 0 }
+        { id: 'p3', name: 'Sellier & Bellot 9mm Luger', type: 'Pistol', make: 'Sellier & Bellot', calibre: '9mm Luger', boxSize: 50, price: 38.00, qty: 0 },
+        { id: 'p4', name: 'CCI Standard .22LR', type: 'Rifle', make: 'CCI', calibre: '.22LR', boxSize: 500, price: 95.00, qty: 0 }
     ];
 
     function renderCart() {
@@ -268,7 +268,7 @@
             total += itemTotal;
             tbody.innerHTML += `
                 <tr>
-                    <td><strong>${p.name}</strong><br><small style="color:var(--text-muted);">${p.make}</small></td>
+                    <td><strong>${p.name}</strong></td>
                     <td>${p.calibre}</td>
                     <td>${p.boxSize} rds</td>
                     <td>$${p.price.toFixed(2)}</td>
@@ -301,26 +301,23 @@
         document.getElementById('view-cart').classList.add('active');
     }
 
-    // --- PDF GENERATION ---
+    // --- CALIBRATED PDF GENERATION ---
     document.getElementById('checkout-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         document.getElementById('view-checkout').classList.remove('active');
         document.getElementById('loading-screen').style.display = 'block';
 
         try {
-            // Fetch the PDF from the local repository
             const res = await fetch('FRM43A.pdf');
-            if (!res.ok) throw new Error("Could not load FRM43A.pdf. Please ensure the file is uploaded to the same folder.");
+            if (!res.ok) throw new Error("Could not load FRM43A.pdf. Please ensure the file is in the correct folder.");
             const existingPdfBytes = await res.arrayBuffer();
 
             const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
             const pages = pdfDoc.getPages();
             
-            // Define pages
             const firstPage = pages[0];
             const secondPage = pages.length > 1 ? pages[1] : pages[0];
 
-            // Setup variables
             const today = new Date();
             const formattedDate = String(today.getDate()).padStart(2, '0') + '/' + 
                                   String(today.getMonth() + 1).padStart(2, '0') + '/' + 
@@ -346,9 +343,8 @@
             const fullAddress = `${buyer.street}, ${buyer.suburb ? buyer.suburb + ', ' : ''}${buyer.city} ${buyer.postcode}`;
             const invoiceNo = 'WEB-' + Math.floor(100000 + Math.random() * 900000);
 
-            // Helper function to draw text safely
-            const drawText = (page, text, x, y, size = 10) => {
-                if (text && page) {
+            const safeDrawText = (page, text, x, y, size = 10) => {
+                if (text && page && typeof page.drawText === 'function') {
                     page.drawText(text.toString(), {
                         x: x, y: y, size: size,
                         color: PDFLib.rgb(0, 0, 0)
@@ -357,67 +353,80 @@
             };
 
             // ================= PAGE 1 =================
-            drawText(firstPage, formattedDate, 500, 765); 
+            safeDrawText(firstPage, formattedDate, 480, 740); 
 
             // Applicant Details
-            drawText(firstPage, buyer.last, 60, 695);
-            drawText(firstPage, buyer.first, 240, 695);
-            drawText(firstPage, buyer.middle, 420, 695);
+            safeDrawText(firstPage, buyer.last, 65, 655);
+            safeDrawText(firstPage, buyer.first, 240, 655);
+            safeDrawText(firstPage, buyer.middle, 420, 655);
 
-            // Checkboxes
-            if (buyer.dest === 'Firearms dealer') drawText(firstPage, 'X', 48, 650, 12);
-            else if (buyer.dest === 'Courier/Transport Depot') drawText(firstPage, 'X', 130, 650, 12);
-            else drawText(firstPage, 'X', 252, 650, 12); // Me
+            // Checkboxes (Adjusted X to fall inside the circle)
+            if (buyer.dest === 'Firearms dealer') safeDrawText(firstPage, 'X', 40, 625, 12);
+            else if (buyer.dest === 'Courier/Transport Depot') safeDrawText(firstPage, 'X', 125, 625, 12);
+            else safeDrawText(firstPage, 'X', 212, 625, 12); // Me
 
-            drawText(firstPage, fullAddress, 185, 630, 9); 
-            drawText(firstPage, buyer.phone, 350, 630);
-            drawText(firstPage, buyer.email, 350, 600);
+            safeDrawText(firstPage, fullAddress, 145, 595, 9); 
+            safeDrawText(firstPage, buyer.phone, 380, 615);
+            safeDrawText(firstPage, buyer.email, 380, 582);
 
             // Licence Info
-            drawText(firstPage, buyer.licNum, 60, 565);
-            drawText(firstPage, buyer.licVer, 60, 535);
-            drawText(firstPage, buyer.licExp, 130, 535);
-            drawText(firstPage, buyer.endorsements, 350, 565);
-            drawText(firstPage, invoiceNo, 450, 565);
+            safeDrawText(firstPage, buyer.licNum, 90, 515);
+            safeDrawText(firstPage, buyer.licVer, 60, 485);
+            safeDrawText(firstPage, buyer.licExp, 165, 485);
+            safeDrawText(firstPage, buyer.endorsements, 380, 545);
+            safeDrawText(firstPage, invoiceNo, 440, 515);
 
             // Supplier Details
-            drawText(firstPage, "Outdoors", 60, 435);
-            drawText(firstPage, "NZ", 240, 435);
-            drawText(firstPage, "Shop", 420, 435);
-            drawText(firstPage, "NZ Outdoors Arms & Ammunition", 60, 375);
-            drawText(firstPage, "45 Alpine Way, Queenstown 9300", 60, 405);
-            drawText(firstPage, "03 555 9999", 350, 435);
-            drawText(firstPage, "sales@nzoutdoors.co.nz", 350, 405);
-            drawText(firstPage, "Aramex NZ", 350, 375);
-            drawText(firstPage, "T9876543", 60, 345);
-            drawText(firstPage, "03", 160, 345);
-            drawText(firstPage, "12/12/2030", 220, 345);
-            drawText(firstPage, "DLR-1234", 350, 345);
-            drawText(firstPage, "01", 425, 345);
-            drawText(firstPage, "12/12/2030", 495, 345);
+            safeDrawText(firstPage, "Outdoors", 90, 360);
+            safeDrawText(firstPage, "NZ", 240, 360);
+            safeDrawText(firstPage, "Shop", 420, 360);
+            safeDrawText(firstPage, "45 Alpine Way, Queenstown 9300", 140, 335);
+            safeDrawText(firstPage, "NZ Outdoors Arms & Ammunition", 140, 290);
+            
+            safeDrawText(firstPage, "03 555 9999", 380, 335);
+            safeDrawText(firstPage, "sales@nzoutdoors.co.nz", 380, 313);
+            safeDrawText(firstPage, "Aramex NZ", 380, 290);
+            
+            safeDrawText(firstPage, "T9876543", 90, 255);
+            safeDrawText(firstPage, "03", 155, 255);
+            safeDrawText(firstPage, "12/12/2030", 220, 255);
+            
+            safeDrawText(firstPage, "DLR-1234", 350, 255);
+            safeDrawText(firstPage, "01", 420, 255);
+            safeDrawText(firstPage, "12/12/2030", 490, 255);
 
-            // Ammunition Table
+            // Ammunition Table (Overflow Logic)
             const cartAmmo = products.filter(p => p.qty > 0);
-            let ammoY = 135;
             
             cartAmmo.forEach((item, idx) => {
-                if (idx < 3) {
-                    drawText(firstPage, item.type, 45, ammoY - (idx * 22), 9);
-                    drawText(firstPage, item.make, 160, ammoY - (idx * 22), 9);
-                    drawText(firstPage, item.calibre, 280, ammoY - (idx * 22), 9);
-                    
-                    // Fixed: Added `firstPage` as the first parameter here
-                    drawText(firstPage, (item.qty * item.boxSize).toString() + " rounds", 420, ammoY - (idx * 22), 9);
+                let calibreWithMake = item.make + ' ' + item.calibre;
+                let totalRounds = (item.qty * item.boxSize).toString() + " rounds";
+
+                if (idx < 2) {
+                    // Page 1 Ammunition Table (Items 1 & 2)
+                    let p1_Y = 70 - (idx * 20);
+                    safeDrawText(firstPage, item.type, 50, p1_Y, 9);
+                    safeDrawText(firstPage, calibreWithMake, 180, p1_Y, 9);
+                    safeDrawText(firstPage, totalRounds, 380, p1_Y, 9);
+                } else if (idx < 5) {
+                    // Page 2 Ammunition Table (Items 3, 4, 5)
+                    let p2_Y = 440 - ((idx - 2) * 20);
+                    safeDrawText(secondPage, item.type, 50, p2_Y, 9);
+                    safeDrawText(secondPage, calibreWithMake, 180, p2_Y, 9);
+                    safeDrawText(secondPage, totalRounds, 380, p2_Y, 9);
                 }
             });
 
             // ================= PAGE 2 =================
-            secondPage.drawRectangle({
-                x: 60, y: 395, width: 220, height: 25,
-                borderColor: PDFLib.rgb(0.8, 0, 0), borderWidth: 1.5
-            });
-            drawText(secondPage, "[ SIGN HERE IN PEN ]", 110, 404, 9);
-            drawText(secondPage, formattedDate, 440, 404);
+            // Red Outline Box to Highlight Physical Signature Area
+            if (typeof secondPage.drawRectangle === 'function') {
+                secondPage.drawRectangle({
+                    x: 80, y: 240, width: 180, height: 25,
+                    borderColor: PDFLib.rgb(0.8, 0.1, 0.1), borderWidth: 1.5
+                });
+            }
+            safeDrawText(secondPage, "[ SIGN HERE IN PEN ]", 95, 248, 9);
+            safeDrawText(secondPage, formattedDate, 450, 248);
 
             // Export & Download
             const pdfBytes = await pdfDoc.save();
@@ -432,7 +441,7 @@
             document.getElementById('view-success').classList.add('active');
 
         } catch (err) {
-            console.error(err);
+            console.error("PDF Generation Error:", err);
             alert("Error generating PDF: " + err.message);
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('view-checkout').classList.add('active');
