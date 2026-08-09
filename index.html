@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NZ Outdoors - Store & Form 43A Generator</title>
+    <!-- Include PDF-lib for exact coordinate text stamping -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         :root {
@@ -300,34 +301,22 @@
         document.getElementById('view-cart').classList.add('active');
     }
 
-    // --- BULLETPROOF PDF GENERATION ---
+    // --- PDF GENERATION ---
     document.getElementById('checkout-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         document.getElementById('view-checkout').classList.remove('active');
         document.getElementById('loading-screen').style.display = 'block';
 
         try {
-            let existingPdfBytes;
-            
-            // ATTEMPT 1: Load local file
-            try {
-                const res = await fetch('FRM43A.pdf');
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                existingPdfBytes = await res.arrayBuffer();
-            } catch (localError) {
-                console.warn("Local fetch failed (CORS/Network block). Routing through public proxy...", localError);
-                
-                // ATTEMPT 2: Fallback to the official Police URL via CORS proxy
-                const publicUrl = encodeURIComponent('https://www.firearmssafetyauthority.govt.nz/sites/default/files/2026-06/FRM43A-Mail%20Order%20Form%20-%20May%202026_0.pdf');
-                const proxyUrl = 'https://api.allorigins.win/raw?url=' + publicUrl;
-                
-                const proxyRes = await fetch(proxyUrl);
-                if (!proxyRes.ok) throw new Error("Proxy fetch failed. Unable to locate the PDF document.");
-                existingPdfBytes = await proxyRes.arrayBuffer();
-            }
+            // Fetch the PDF from the local repository
+            const res = await fetch('FRM43A.pdf');
+            if (!res.ok) throw new Error("Could not load FRM43A.pdf. Please ensure the file is uploaded to the same folder.");
+            const existingPdfBytes = await res.arrayBuffer();
 
             const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
             const pages = pdfDoc.getPages();
+            
+            // Define pages
             const firstPage = pages[0];
             const secondPage = pages.length > 1 ? pages[1] : pages[0];
 
@@ -357,9 +346,9 @@
             const fullAddress = `${buyer.street}, ${buyer.suburb ? buyer.suburb + ', ' : ''}${buyer.city} ${buyer.postcode}`;
             const invoiceNo = 'WEB-' + Math.floor(100000 + Math.random() * 900000);
 
-            // Helper to draw text at exact X/Y points
+            // Helper function to draw text safely
             const drawText = (page, text, x, y, size = 10) => {
-                if (text) {
+                if (text && page) {
                     page.drawText(text.toString(), {
                         x: x, y: y, size: size,
                         color: PDFLib.rgb(0, 0, 0)
@@ -410,12 +399,15 @@
             // Ammunition Table
             const cartAmmo = products.filter(p => p.qty > 0);
             let ammoY = 135;
+            
             cartAmmo.forEach((item, idx) => {
                 if (idx < 3) {
                     drawText(firstPage, item.type, 45, ammoY - (idx * 22), 9);
                     drawText(firstPage, item.make, 160, ammoY - (idx * 22), 9);
                     drawText(firstPage, item.calibre, 280, ammoY - (idx * 22), 9);
-                    drawText((item.qty * item.boxSize).toString() + " rounds", 420, ammoY - (idx * 22), 9);
+                    
+                    // Fixed: Added `firstPage` as the first parameter here
+                    drawText(firstPage, (item.qty * item.boxSize).toString() + " rounds", 420, ammoY - (idx * 22), 9);
                 }
             });
 
@@ -440,8 +432,8 @@
             document.getElementById('view-success').classList.add('active');
 
         } catch (err) {
-            console.error("PDF Generation Error:", err);
-            alert("Error generating PDF: " + err.message + "\n\nPlease check your console (F12) for more details.");
+            console.error(err);
+            alert("Error generating PDF: " + err.message);
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('view-checkout').classList.add('active');
         }
