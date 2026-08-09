@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NZ Outdoors - Store & Form 43A Generator</title>
+    <!-- Include PDF-lib for exact coordinate text stamping -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         :root {
@@ -232,15 +233,15 @@
         <div style="text-align:center; padding: 10px 0 20px;">
             <div style="font-size: 3rem; color: var(--secondary); line-height: 1;">✓</div>
             <h2 style="color: var(--primary); margin-top: 10px;">Your Form 43A is Ready!</h2>
-            <p>Your document has been generated and downloaded successfully.</p>
+            <p>Your document has been successfully generated.</p>
         </div>
 
         <div class="alert-box" style="background:#fff; border: 2px solid var(--secondary);">
             <h4 style="margin-top:0; color:var(--primary);">Final Steps to Complete Your Order:</h4>
             <ol style="margin-bottom:0; padding-left:20px; line-height:1.7;">
-                <li><strong>Print</strong> the downloaded PDF (both pages).</li>
-                <li><strong>Sign</strong> and date the bottom of Page 2 in pen.</li>
-                <li><strong>Hand it in</strong> to a Police Station along with your physical Firearms Licence. The Police will process it and email us directly to release your order.</li>
+                <li><strong>Print</strong> the downloaded PDF document.</li>
+                <li><strong>Sign</strong> the Applicant's Declaration section on Page 2 in pen.</li>
+                <li><strong>Hand it in</strong> at your local Police Station with your Firearms Licence. They will process it and notify us directly.</li>
             </ol>
         </div>
 
@@ -251,7 +252,6 @@
 
 <script>
     // --- AMMUNITION CART DATA ---
-    // Added a 4th dummy item to test Page 1 & Page 2 overflow printing
     const products = [
         { id: 'p1', name: 'Hornady Custom .308 Win 150gr', type: 'Rifle', make: 'Hornady', calibre: '.308 Win', boxSize: 50, price: 65.00, qty: 1 },
         { id: 'p2', name: 'Federal Target 12G Buckshot', type: 'Shotgun', make: 'Federal', calibre: '12 Gauge', boxSize: 25, price: 32.00, qty: 0 },
@@ -301,7 +301,7 @@
         document.getElementById('view-cart').classList.add('active');
     }
 
-    // --- CALIBRATED PDF GENERATION ---
+    // --- RE-CALIBRATED PDF GENERATION ---
     document.getElementById('checkout-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         document.getElementById('view-checkout').classList.remove('active');
@@ -353,49 +353,51 @@
             };
 
             // ================= PAGE 1 =================
-            safeDrawText(firstPage, formattedDate, 480, 740); 
+            // Top Right Date Box
+            safeDrawText(firstPage, formattedDate, 480, 755); 
 
-            // Applicant Details
-            safeDrawText(firstPage, buyer.last, 65, 655);
-            safeDrawText(firstPage, buyer.first, 240, 655);
-            safeDrawText(firstPage, buyer.middle, 420, 655);
+            // Applicant Details (Lowered to sit inside the boxes)
+            safeDrawText(firstPage, buyer.last, 60, 675);
+            safeDrawText(firstPage, buyer.first, 240, 675);
+            safeDrawText(firstPage, buyer.middle, 420, 675);
 
-            // Checkboxes (Adjusted X to fall inside the circle)
-            if (buyer.dest === 'Firearms dealer') safeDrawText(firstPage, 'X', 40, 625, 12);
-            else if (buyer.dest === 'Courier/Transport Depot') safeDrawText(firstPage, 'X', 125, 625, 12);
-            else safeDrawText(firstPage, 'X', 212, 625, 12); // Me
+            // Checkboxes (Moved down to align with circles)
+            if (buyer.dest === 'Firearms dealer') safeDrawText(firstPage, 'X', 52, 641, 12);
+            else if (buyer.dest === 'Courier/Transport Depot') safeDrawText(firstPage, 'X', 140, 641, 12);
+            else safeDrawText(firstPage, 'X', 270, 641, 12); 
 
-            safeDrawText(firstPage, fullAddress, 145, 595, 9); 
-            safeDrawText(firstPage, buyer.phone, 380, 615);
-            safeDrawText(firstPage, buyer.email, 380, 582);
+            // Address & Contact info (Lowered to sit in boxes)
+            safeDrawText(firstPage, fullAddress, 180, 615, 9); 
+            safeDrawText(firstPage, buyer.phone, 390, 635);
+            safeDrawText(firstPage, buyer.email, 390, 600);
 
-            // Licence Info
-            safeDrawText(firstPage, buyer.licNum, 90, 515);
-            safeDrawText(firstPage, buyer.licVer, 60, 485);
-            safeDrawText(firstPage, buyer.licExp, 165, 485);
-            safeDrawText(firstPage, buyer.endorsements, 380, 545);
-            safeDrawText(firstPage, invoiceNo, 440, 515);
+            // Licence Info (Lowered from 515 -> 555 area depending on box)
+            safeDrawText(firstPage, buyer.licNum, 60, 555);
+            safeDrawText(firstPage, buyer.licVer, 60, 520);
+            safeDrawText(firstPage, buyer.licExp, 150, 520);
+            safeDrawText(firstPage, buyer.endorsements, 390, 555);
+            safeDrawText(firstPage, invoiceNo, 450, 520);
 
-            // Supplier Details
-            safeDrawText(firstPage, "Outdoors", 90, 360);
-            safeDrawText(firstPage, "NZ", 240, 360);
-            safeDrawText(firstPage, "Shop", 420, 360);
-            safeDrawText(firstPage, "45 Alpine Way, Queenstown 9300", 140, 335);
-            safeDrawText(firstPage, "NZ Outdoors Arms & Ammunition", 140, 290);
+            // Supplier Details (Lowered)
+            safeDrawText(firstPage, "Outdoors", 60, 410);
+            safeDrawText(firstPage, "NZ", 240, 410);
+            safeDrawText(firstPage, "Shop", 420, 410);
+            safeDrawText(firstPage, "45 Alpine Way, Queenstown 9300", 60, 375);
+            safeDrawText(firstPage, "NZ Outdoors Arms & Ammunition", 60, 345);
             
-            safeDrawText(firstPage, "03 555 9999", 380, 335);
-            safeDrawText(firstPage, "sales@nzoutdoors.co.nz", 380, 313);
-            safeDrawText(firstPage, "Aramex NZ", 380, 290);
+            safeDrawText(firstPage, "03 555 9999", 390, 410);
+            safeDrawText(firstPage, "sales@nzoutdoors.co.nz", 390, 375);
+            safeDrawText(firstPage, "Aramex NZ", 390, 345);
             
-            safeDrawText(firstPage, "T9876543", 90, 255);
-            safeDrawText(firstPage, "03", 155, 255);
-            safeDrawText(firstPage, "12/12/2030", 220, 255);
+            safeDrawText(firstPage, "T9876543", 60, 310);
+            safeDrawText(firstPage, "03", 160, 310);
+            safeDrawText(firstPage, "12/12/2030", 220, 310);
             
-            safeDrawText(firstPage, "DLR-1234", 350, 255);
-            safeDrawText(firstPage, "01", 420, 255);
-            safeDrawText(firstPage, "12/12/2030", 490, 255);
+            safeDrawText(firstPage, "DLR-1234", 390, 310);
+            safeDrawText(firstPage, "01", 450, 310);
+            safeDrawText(firstPage, "12/12/2030", 500, 310);
 
-            // Ammunition Table (Overflow Logic)
+            // Ammunition Table (Raised to proper Page 1 table location)
             const cartAmmo = products.filter(p => p.qty > 0);
             
             cartAmmo.forEach((item, idx) => {
@@ -403,30 +405,30 @@
                 let totalRounds = (item.qty * item.boxSize).toString() + " rounds";
 
                 if (idx < 2) {
-                    // Page 1 Ammunition Table (Items 1 & 2)
-                    let p1_Y = 70 - (idx * 20);
-                    safeDrawText(firstPage, item.type, 50, p1_Y, 9);
+                    // Page 1 Ammunition Table
+                    let p1_Y = 135 - (idx * 15);
+                    safeDrawText(firstPage, item.type, 60, p1_Y, 9);
                     safeDrawText(firstPage, calibreWithMake, 180, p1_Y, 9);
-                    safeDrawText(firstPage, totalRounds, 380, p1_Y, 9);
+                    safeDrawText(firstPage, totalRounds, 420, p1_Y, 9);
                 } else if (idx < 5) {
-                    // Page 2 Ammunition Table (Items 3, 4, 5)
-                    let p2_Y = 440 - ((idx - 2) * 20);
-                    safeDrawText(secondPage, item.type, 50, p2_Y, 9);
+                    // Page 2 Ammunition Table (Raised so it doesn't overlap Privacy section)
+                    let p2_Y = 535 - ((idx - 2) * 15);
+                    safeDrawText(secondPage, item.type, 60, p2_Y, 9);
                     safeDrawText(secondPage, calibreWithMake, 180, p2_Y, 9);
-                    safeDrawText(secondPage, totalRounds, 380, p2_Y, 9);
+                    safeDrawText(secondPage, totalRounds, 420, p2_Y, 9);
                 }
             });
 
             // ================= PAGE 2 =================
-            // Red Outline Box to Highlight Physical Signature Area
+            // Red Outline Box & Date (Raised away from Police section)
             if (typeof secondPage.drawRectangle === 'function') {
                 secondPage.drawRectangle({
-                    x: 80, y: 240, width: 180, height: 25,
+                    x: 55, y: 362, width: 175, height: 25,
                     borderColor: PDFLib.rgb(0.8, 0.1, 0.1), borderWidth: 1.5
                 });
             }
-            safeDrawText(secondPage, "[ SIGN HERE IN PEN ]", 95, 248, 9);
-            safeDrawText(secondPage, formattedDate, 450, 248);
+            safeDrawText(secondPage, "[ SIGN HERE IN PEN ]", 75, 370, 9);
+            safeDrawText(secondPage, formattedDate, 450, 370);
 
             // Export & Download
             const pdfBytes = await pdfDoc.save();
