@@ -8,109 +8,67 @@
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         :root {
-            --primary: #1b3a1a;
-            --secondary: #2c5928;
-            --bg: #f4f6f4;
-            --surface: #ffffff;
-            --accent: #d4af37;
-            --text: #222222;
-            --text-light: #666666;
-            --border: #e0e0e0;
-            --radius: 8px;
+            --primary: #1b3a1a; --secondary: #2c5928; --bg: #f4f6f4;
+            --surface: #ffffff; --accent: #d4af37; --text: #222222;
+            --text-light: #666666; --border: #e0e0e0; --radius: 8px;
         }
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
         body { background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
-        
-        .app-container {
-            width: 100%; max-width: 900px; background: var(--surface);
-            border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden;
-        }
-        
-        /* Header */
-        .header { background: var(--primary); color: white; padding: 20px 30px; text-align: center; }
-        .header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase; }
-        
-        /* Views */
+        .app-container { width: 100%; max-width: 900px; background: var(--surface); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; }
+        .header { background: var(--primary); color: white; padding: 20px 30px; text-align: center; text-transform: uppercase; }
         .view-section { padding: 30px; display: none; }
         .view-section.active { display: block; }
-
-        /* Cart Styles */
         .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); }
-        .cart-item:last-child { border-bottom: none; }
-        .item-details h4 { margin: 0 0 5px 0; font-size: 1.1rem; }
+        .item-details h4 { margin: 0 0 5px 0; }
         .item-details p { margin: 0; color: var(--text-light); font-size: 0.9rem; }
         .qty-controls { display: flex; align-items: center; gap: 15px; }
-        .qty-btn { background: var(--bg); border: 1px solid var(--border); padding: 5px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; }
-        .qty-btn:hover { background: #e0e0e0; }
+        .qty-btn { background: var(--bg); border: 1px solid var(--border); padding: 5px 12px; cursor: pointer; font-weight: bold; }
         .cart-total { text-align: right; font-size: 1.3rem; font-weight: bold; margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--border); }
-
-        /* Form Styles */
         .section-title { color: var(--secondary); border-bottom: 2px solid var(--secondary); padding-bottom: 8px; margin: 30px 0 20px; font-size: 1.2rem; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-weight: 600; font-size: 0.9rem; margin-bottom: 5px; color: var(--primary); }
         .form-group span.help { font-size: 0.75rem; color: var(--text-light); margin-bottom: 8px; }
-        .form-group input, .form-group select {
-            padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; transition: border 0.2s;
-        }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--secondary); }
-        
+        .form-group input, .form-group select { padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
         .full-width { grid-column: 1 / -1; }
-
-        /* Buttons */
-        .btn-primary {
-            background: var(--accent); color: #000; border: none; padding: 16px 32px; font-size: 1.1rem;
-            font-weight: bold; border-radius: var(--radius); cursor: pointer; width: 100%;
-            text-transform: uppercase; margin-top: 25px; transition: background 0.2s;
-        }
-        .btn-primary:hover { background: #c5a02c; }
+        .btn-primary { background: var(--accent); color: #000; border: none; padding: 16px 32px; font-size: 1.1rem; font-weight: bold; border-radius: var(--radius); cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 25px; }
         .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); margin-top: 15px; }
-
-        /* Loading Overlay */
         #loading { display: none; text-align: center; padding: 40px; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div class="header">
-        <h1>NZ Outdoors Ammunition</h1>
-    </div>
+    <div class="header"><h1>NZ Outdoors Ammunition</h1></div>
 
     <!-- CART VIEW -->
     <div id="view-cart" class="view-section active">
         <h2 style="margin-top:0;">Your Cart</h2>
-        <div id="cart-items-container">
-            <!-- Populated by JS -->
-        </div>
-        <div class="cart-total">
-            Total: $<span id="cart-total-price">0.00</span>
-        </div>
+        <div id="cart-items-container"></div>
+        <div class="cart-total">Total: $<span id="cart-total-price">0.00</span></div>
         <button class="btn-primary" onclick="proceedToCheckout()">Proceed to Secure Checkout</button>
     </div>
 
     <!-- CHECKOUT VIEW -->
     <div id="view-checkout" class="view-section">
-        <h2 style="margin-top:0;">Secure Checkout - Legal Details</h2>
-        <p style="color: var(--text-light); font-size: 0.9rem;">Please enter your details exactly as they appear on your licence. We will map these directly onto your FRM 43A form.</p>
+        <h2 style="margin-top:0;">Secure Checkout</h2>
+        <p style="color: var(--text-light);">Details must exactly match your licence to generate the FRM 43A form[cite: 1, 2].</p>
         
         <form id="checkout-form">
             <h3 class="section-title">1. Firearms Licence Details</h3>
             <div class="form-grid">
-                <div class="form-group">
-                    <label>Licence Number *</label>
-                    <span class="help">E.g., T1234567</span>
-                    <input type="text" id="chk-lic-num" required>
-                </div>
-                <div class="form-group">
-                    <label>Version *</label>
-                    <span class="help">Usually a single digit</span>
-                    <input type="text" id="chk-lic-ver" required>
-                </div>
-                <div class="form-group">
-                    <label>Expiry Date *</label>
-                    <span class="help">Format: DD/MM/YYYY</span>
-                    <input type="date" id="chk-lic-exp" required>
+                <div class="form-group"><label>Licence Number *</label><span class="help">E.g., T1234567</span><input type="text" id="chk-lic-num" required></div>
+                <div class="form-group"><label>Version *</label><span class="help">E.g., 1</span><input type="text" id="chk-lic-ver" required></div>
+                <div class="form-group"><label>Expiry Date *</label><span class="help">DD/MM/YYYY</span><input type="date" id="chk-lic-exp" required></div>
+                <div class="form-group full-width">
+                    <label>Endorsements Held</label><span class="help">Select any special endorsements you hold[cite: 1].</span>
+                    <select id="chk-endorsements">
+                        <option value="None">None (Standard A-Category)</option>
+                        <option value="Dealer">Dealer</option>
+                        <option value="Pistol">Pistol Target Shooting</option>
+                        <option value="Collector">Collector</option>
+                        <option value="Pest Control">Pest Control</option>
+                    </select>
                 </div>
             </div>
 
@@ -126,8 +84,7 @@
             <h3 class="section-title">3. Delivery Information</h3>
             <div class="form-grid">
                 <div class="form-group full-width">
-                    <label>Delivery Destination *</label>
-                    <span class="help">Who will receive this at the address below?[cite: 1]</span>
+                    <label>Delivery Destination *</label><span class="help">Where will purchased items be delivered?[cite: 1]</span>
                     <select id="chk-dest" required>
                         <option value="Me">Me (Licence Holder)</option>
                         <option value="Firearms dealer">Firearms Dealer</option>
@@ -137,6 +94,7 @@
                 <div class="form-group full-width"><label>Street Address *</label><input type="text" id="chk-street" required></div>
                 <div class="form-group"><label>Suburb</label><input type="text" id="chk-suburb"></div>
                 <div class="form-group"><label>City *</label><input type="text" id="chk-city" required></div>
+                <div class="form-group"><label>Postcode *</label><input type="text" id="chk-postcode" required></div>
             </div>
 
             <button type="submit" class="btn-primary">Generate Official Form & Complete Order</button>
@@ -146,57 +104,43 @@
 
     <!-- LOADING VIEW -->
     <div id="loading" class="view-section">
-        <h2>Processing...</h2>
-        <p>Stamping your details onto the official FRM 43A document...</p>
+        <h2>Processing...</h2><p>Generating official document...</p>
     </div>
 </div>
 
 <script>
-    // --- CART LOGIC ---
+    // Include Manufacturer (Make) for Ammo[cite: 1]
     const products = [
-        { id: 'p1', name: '.308 Winchester 150gr', type: 'Rifle', calibre: '.308 Winchester', price: 45.00, qty: 1, isAmmo: true },
-        { id: 'p2', name: '12 Gauge Buckshot', type: 'Shotgun', calibre: '12 Gauge', price: 25.00, qty: 0, isAmmo: true },
-        { id: 'p3', name: '9mm Luger 115gr FMJ', type: 'Pistol', calibre: '9mm Luger', price: 35.00, qty: 0, isAmmo: true }
+        { id: 'p1', name: '.308 Winchester 150gr', type: 'Rifle', make: 'Hornady', calibre: '.308 Win', price: 45.00, qty: 1, isAmmo: true },
+        { id: 'p2', name: '12 Gauge Buckshot', type: 'Shotgun', make: 'Federal', calibre: '12 Gauge', price: 25.00, qty: 0, isAmmo: true }
     ];
 
     function renderCart() {
         const container = document.getElementById('cart-items-container');
         container.innerHTML = '';
         let total = 0;
-
         products.forEach(p => {
             total += p.price * p.qty;
             container.innerHTML += `
                 <div class="cart-item">
-                    <div class="item-details">
-                        <h4>${p.name}</h4>
-                        <p>$${p.price.toFixed(2)} / box (50 rds)</p>
-                    </div>
+                    <div class="item-details"><h4>${p.name}</h4><p>$${p.price.toFixed(2)} / box (50 rds)</p></div>
                     <div class="qty-controls">
                         <button class="qty-btn" onclick="updateQty('${p.id}', -1)">-</button>
                         <span>${p.qty}</span>
                         <button class="qty-btn" onclick="updateQty('${p.id}', 1)">+</button>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
         document.getElementById('cart-total-price').innerText = total.toFixed(2);
     }
 
     function updateQty(id, change) {
         const p = products.find(x => x.id === id);
-        if (p) {
-            p.qty += change;
-            if (p.qty < 0) p.qty = 0;
-            renderCart();
-        }
+        if (p) { p.qty += change; if (p.qty < 0) p.qty = 0; renderCart(); }
     }
 
-    // --- NAVIGATION ---
     function proceedToCheckout() {
-        if(products.filter(p => p.qty > 0).length === 0) {
-            alert("Your cart is empty!"); return;
-        }
+        if(products.filter(p => p.qty > 0).length === 0) return alert("Cart is empty!");
         document.getElementById('view-cart').classList.remove('active');
         document.getElementById('view-checkout').classList.add('active');
     }
@@ -206,28 +150,23 @@
         document.getElementById('view-cart').classList.add('active');
     }
 
-    // --- PDF GENERATION LOGIC ---
     document.getElementById('checkout-form').addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         document.getElementById('view-checkout').classList.remove('active');
         document.getElementById('loading').style.display = 'block';
 
         try {
-            // Note: In production, download the PDF and host it on your server to avoid CORS blocks.
-            const formUrl = 'https://www.firearmssafetyauthority.govt.nz/sites/default/files/2026-06/FRM43A-Mail%20Order%20Form%20-%20May%202026_0.pdf';
+            // LOAD THE LOCAL PDF FROM YOUR GITHUB PAGES REPO
+            const formUrl = './FRM43A.pdf'; 
             const existingPdfBytes = await fetch(formUrl).then(res => res.arrayBuffer());
             const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-            const pages = pdfDoc.getPages();
-            const firstPage = pages[0]; // Form is 2 pages, most data is on Page 1
+            const firstPage = pdfDoc.getPages()[0]; 
 
-            // Helper to draw text
             const drawText = (text, x, y, size = 10) => {
-                if(!text) return;
-                firstPage.drawText(text.toString(), { x, y, size });
+                if(text) firstPage.drawText(text.toString(), { x, y, size });
             };
 
-            // GET FORM VALUES
+            // GATHER ALL DATA
             const first = document.getElementById('chk-first').value;
             const middle = document.getElementById('chk-middle').value;
             const last = document.getElementById('chk-last').value;
@@ -237,57 +176,53 @@
             const licNum = document.getElementById('chk-lic-num').value.toUpperCase();
             const licVer = document.getElementById('chk-lic-ver').value;
             const licExp = document.getElementById('chk-lic-exp').value;
+            const endorsements = document.getElementById('chk-endorsements').value;
             
             const dest = document.getElementById('chk-dest').value;
             const street = document.getElementById('chk-street').value;
             const suburb = document.getElementById('chk-suburb').value;
             const city = document.getElementById('chk-city').value;
-            const fullAddress = `${street}, ${suburb ? suburb + ', ' : ''}${city}`;
+            const postcode = document.getElementById('chk-postcode').value;
+            const fullAddress = `${street}, ${suburb ? suburb + ', ' : ''}${city} ${postcode}`;
 
-            // OVERLAY TEXT (These X/Y coordinates require fine-tuning based on the exact PDF layout)
-            // Example Coordinates for Buyer Section
+            // --- IMPORTANT: MAP COORDINATES ---
+            // These X/Y coordinates represent points on the PDF page (0,0 is bottom left).
+            // You will need to tweak these numbers slightly so they align perfectly on the lines of the official PDF.
+            
+            // Applicant Details[cite: 1]
             drawText(last, 60, 670);
             drawText(first, 220, 670);
             drawText(middle, 380, 670);
-            
-            drawText(dest === 'Me' ? 'X' : '', 60, 630); // Checkboxes
+            drawText(dest === 'Me' ? 'X' : '', 60, 630); 
             drawText(fullAddress, 180, 630);
             drawText(phone, 60, 600);
             drawText(email, 220, 600);
+            drawText(endorsements, 380, 600); 
 
+            // Licence Details[cite: 1]
             drawText(licNum, 60, 560);
             drawText(licVer, 220, 560);
             drawText(licExp, 320, 560);
 
-            // Example Coordinates for Seller Section (Hardcoded for your shop)
+            // Supplier Details[cite: 1]
             drawText("NZ Outdoors Shop", 60, 480);
             drawText("sales@nzoutdoors.co.nz", 60, 450);
             drawText("DLR-9999", 60, 420);
             
-            // Map Ammo from Cart
+            // Ammo Details[cite: 1, 2]
             const ammoItems = products.filter(p => p.qty > 0 && p.isAmmo);
-            let startY = 280; // Approximate start height of ammo table
+            let startY = 280; 
             
             ammoItems.forEach((item, index) => {
-                if (index < 4) { // Fits on page 1
+                if (index < 4) { 
                     drawText(item.type, 60, startY - (index * 20));
-                    drawText(item.calibre, 200, startY - (index * 20));
-                    drawText((item.qty * 50).toString(), 400, startY - (index * 20)); // qty * 50 rounds
+                    drawText(item.make, 160, startY - (index * 20)); 
+                    drawText(item.calibre, 260, startY - (index * 20));
+                    drawText((item.qty * 50).toString(), 400, startY - (index * 20)); 
                 }
             });
 
-            // Handle Overflow (Adding a supplemental page if > 4 items)
-            if(ammoItems.length > 4) {
-                const newPage = pdfDoc.addPage();
-                newPage.drawText("Supplemental Items List", { x: 50, y: 800, size: 14 });
-                let overflowY = 750;
-                ammoItems.slice(4).forEach(item => {
-                    newPage.drawText(`${item.type} - ${item.calibre} - Quantity: ${item.qty * 50}`, { x: 50, y: overflowY });
-                    overflowY -= 20;
-                });
-            }
-
-            // Save and trigger download
+            // TRIGGER DOWNLOAD
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
             const link = document.createElement('a');
@@ -297,19 +232,18 @@
 
             document.getElementById('loading').innerHTML = `
                 <h2>Success!</h2>
-                <p>Your FRM 43A form has been generated and downloaded.</p>
-                <p style="color:var(--secondary); font-weight:bold;">Next Step: Please print this PDF, sign it, and physically take it to your local Police station for processing.</p>
+                <p>Your official form has downloaded.</p>
+                <p style="color:var(--secondary); font-weight:bold;">Next Step: Print this PDF, sign it, and take it to your local Police station.</p>
             `;
 
         } catch (error) {
             console.error(error);
-            alert("Error generating PDF. This is likely a CORS issue if testing locally. Please ensure the PDF is hosted on the same domain as the website.");
+            alert("Error: Ensure FRM43A.pdf is uploaded in the same GitHub folder as this HTML file.");
             document.getElementById('loading').style.display = 'none';
             document.getElementById('view-checkout').classList.add('active');
         }
     });
 
-    // Initialize
     renderCart();
 </script>
 </body>
