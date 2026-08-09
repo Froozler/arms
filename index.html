@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NZ Outdoors - Ammo Checkout</title>
+    <style>
+        /* === MOBILE-FIRST THEME & TYPOGRAPHY === */
+        :root {
+            --primary: #1e3c1a;
+            --secondary: #2d5a27;
+            --bg-light: #f4f9f4;
+            --accent: #f1c40f;
+            --text-main: #333;
+            --border: #ccc;
+            --helper-text: #555;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #eaeaea;
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            font-size: 16px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 { color: var(--primary); text-transform: uppercase; margin-top: 0; }
+        h1 { font-size: 1.4rem; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+        
+        /* === CHECKOUT FORM STYLES === */
+        #checkout-view { display: block; }
+        .checkout-box {
+            background: var(--bg-light);
+            border: 2px solid var(--secondary);
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 700; color: var(--primary); font-size: 1rem; margin-bottom: 2px; }
+        .subtitle { display: block; font-size: 0.85rem; color: var(--helper-text); margin-bottom: 8px; font-weight: 400; }
+        
+        input, select {
+            width: 100%; padding: 12px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 16px; /* 16px prevents iOS zoom */
+            background: #fff;
+        }
+        input:focus, select:focus { outline: 2px solid var(--secondary); border-color: transparent; }
+        
+        .grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .address-box { padding: 15px; border: 1px solid var(--border); border-radius: 6px; background: #fff; margin-top: 5px; }
+
+        button {
+            background: var(--accent); color: #000; font-weight: bold;
+            padding: 18px; border: none; border-radius: 6px;
+            font-size: 1.1rem; cursor: pointer; width: 100%; margin-top: 20px;
+            text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover { background: #d4ac0d; }
+
+        @media(min-width: 600px) {
+            .grid { grid-template-columns: 1fr 1fr; }
+            .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        /* === FRM 43A PRINT VIEW STYLES === */
+        #frm43a-view { display: none; background: #fff; color: #000; }
+        .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+        .print-header h1 { font-size: 18px; margin: 0 0 5px 0; border: none; }
+        .print-section-title { font-size: 13px; font-weight: bold; background: #eee; padding: 6px; border: 1px solid #000; margin: 15px 0 10px 0; }
+        .print-row { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid #000; border-bottom: none; }
+        .print-col { flex: 1; min-width: 30%; border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 8px; font-size: 11px; }
+        .print-col:last-child { border-right: none; }
+        .print-full-row { width: 100%; border-bottom: 1px solid #000; padding: 8px; font-size: 11px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+        th, td { border: 1px solid #000; padding: 6px; text-align: left; }
+        th { background: #f9f9f9; }
+        .signature-box { border: 1px solid #000; padding: 25px 10px 10px 10px; margin-top: 15px; font-size: 11px; }
+
+        @media print {
+            body { background: #fff; padding: 0; font-size: 12px; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; border: none; }
+            #checkout-view { display: none !important; }
+            #frm43a-view { display: block !important; }
+            @page { size: A4; margin: 10mm; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- ========================================== -->
+    <!-- SECURE CHECKOUT VIEW                       -->
+    <!-- ========================================== -->
+    <div id="checkout-view">
+        <h1>🌿 Secure Ammo Checkout</h1>
+        <p style="font-size:0.95rem; font-weight:bold;">Cart: 50x .308 Winchester Rounds.</p>
+        
+        <form id="mvp-checkout-form">
+            <div class="checkout-box">
+                <h3 style="margin-bottom: 5px;">Step 1: Licence Details</h3>
+                <p style="font-size:0.85rem; margin-top: 0;">We need this to generate your FRM 43A form.</p>
+                
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label>Licence Number *</label>
+                        <span class="subtitle">Printed on the front of your photo ID.</span>
+                        <input type="text" id="chk-lic-num" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Version *</label>
+                        <span class="subtitle">Usually a single or double digit (e.g., 1).</span>
+                        <input type="text" id="chk-lic-ver" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Expiry Date *</label>
+                        <span class="subtitle">Must be a valid, future date.</span>
+                        <input type="date" id="chk-lic-exp" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Endorsements Held</label>
+                    <span class="subtitle">Select any special endorsements you hold, or choose "None" for a standard licence.</span>
+                    <select id="chk-endorsements">
+                        <option value="None">None (Standard A-Category)</option>
+                        <option value="Dealer">Dealer</option>
+                        <option value="Pistol">Pistol Target Shooting</option>
+                        <option value="Collector">Collector</option>
+                        <option value="Pest Control">Pest Control</option>
+                        <option value="Theatrical">Theatrical / Film</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="checkout-box">
+                <h3 style="margin-bottom: 5px;">Step 2: Personal Details</h3>
+                <p style="font-size:0.85rem; margin-top: 0;">Must exactly match the person holding the licence above.</p>
+
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label>First Name *</label>
+                        <span class="subtitle">Legal first name.</span>
+                        <input type="text" id="chk-first" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Middle Name</label>
+                        <span class="subtitle">Leave blank if none.</span>
+                        <input type="text" id="chk-middle">
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name *</label>
+                        <span class="subtitle">Legal surname.</span>
+                        <input type="text" id="chk-last" required>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <span class="subtitle">Where we will send your order updates.</span>
+                        <input type="email" id="chk-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <span class="subtitle">Best contact number.</span>
+                        <input type="tel" id="chk-phone" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="checkout-box">
+                <h3 style="margin-bottom: 5px;">Step 3: Delivery Info</h3>
+                <p style="font-size:0.85rem; margin-top: 0;">Ammunition must be delivered to a verified physical address.</p>
+
+                <div class="form-group">
+                    <label>Delivery Destination *</label>
+                    <span class="subtitle">Select who is receiving the package at the address below.</span>
+                    <select id="chk-dest" required>
+                        <option value="Me">Me (Licence Holder Address)</option>
+                        <option value="Firearms dealer">Firearms Dealer</option>
+                        <option value="Courier/Transport Depot">Courier/Transport Depot</option>
+                    </select>
+                </div>
+
+                <div class="address-box">
+                    <label style="margin-bottom:15px; font-size:1.1rem;">Full Delivery Address</label>
+                    <div class="form-group">
+                        <label>Street Address *</label>
+                        <span class="subtitle">E.g., 123 Fern Road (No PO Boxes).</span>
+                        <input type="text" id="chk-street" required>
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Suburb</label>
+                            <span class="subtitle">Optional.</span>
+                            <input type="text" id="chk-suburb">
+                        </div>
+                        <div class="form-group">
+                            <label>City / Town *</label>
+                            <span class="subtitle">E.g., Wellington.</span>
+                            <input type="text" id="chk-city" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Postcode *</label>
+                        <span class="subtitle">4-digit NZ Postcode.</span>
+                        <input type="text" id="chk-postcode" required pattern="\d{4}" title="Must be 4 digits">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit">Complete Order & Print Form</button>
+        </form>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- GENERATED FRM 43A VIEW (PRINTABLE)         -->
+    <!-- ========================================== -->
+    <div id="frm43a-view">
+        <div class="print-header">
+            <h1>Te Tari Pūreke - Firearms Safety Authority</h1>
+            <p style="font-size:12px; margin:5px 0;">Mail Order or Internet Sales of Non-prohibited Firearms, Airguns, Non-prohibited Magazines, Non-prohibited Parts, Ammunition</p>
+        </div>
+
+        <div class="print-section-title">Section 1: Applicant to fill in all relevant details in this section (The Buyer)</div>
+        <div class="print-row">
+            <div class="print-col"><strong>Last name:</strong> <span id="out-last"></span></div>
+            <div class="print-col"><strong>First name:</strong> <span id="out-first"></span></div>
+            <div class="print-col"><strong>Middle name:</strong> <span id="out-middle"></span></div>
+        </div>
+        <div class="print-row">
+            <div class="print-col" style="flex:2;"><strong>Delivery address:</strong> <span id="out-address"></span></div>
+            <div class="print-col"><strong>Delivered to:</strong> <span id="out-dest"></span></div>
+        </div>
+        <div class="print-row">
+            <div class="print-col"><strong>Phone:</strong> <span id="out-phone"></span></div>
+            <div class="print-col" style="flex:2;"><strong>Email:</strong> <span id="out-email"></span></div>
+        </div>
+        <div class="print-row">
+            <div class="print-col"><strong>Firearms licence no:</strong> <span id="out-lic-num"></span></div>
+            <div class="print-col"><strong>Version:</strong> <span id="out-lic-ver"></span></div>
+            <div class="print-col"><strong>Expiry:</strong> <span id="out-lic-exp"></span></div>
+            <div class="print-col"><strong>Endorsements:</strong> <span id="out-endorsements"></span></div>
+        </div>
+        <div style="border-top:1px solid #000;"></div>
+
+        <div class="print-section-title">Supplier (The Seller)</div>
+        <div class="print-row">
+            <div class="print-col"><strong>Business name:</strong> NZ Outdoors Ammo Shop</div>
+            <div class="print-col"><strong>Phone:</strong> 03 555 9999</div>
+            <div class="print-col"><strong>Email:</strong> sales@nzoutdoors-demo.co.nz</div>
+        </div>
+        <div class="print-row">
+            <div class="print-col" style="flex:2;"><strong>Address:</strong> 45 Alpine Way, Queenstown, NZ</div>
+            <div class="print-col"><strong>Proposed Courier:</strong> Aramex / Mainfreight</div>
+        </div>
+        <div class="print-row">
+            <div class="print-col"><strong>Firearms licence no:</strong> T9876543</div>
+            <div class="print-col"><strong>Version:</strong> 03</div>
+            <div class="print-col"><strong>Expiry:</strong> 12/12/2030</div>
+        </div>
+        <div class="print-row">
+            <div class="print-full-row"><strong>Seller's reference or invoice number:</strong> WEB-INV-<span id="out-invoice"></span></div>
+        </div>
+        <div style="border-top:1px solid #000;"></div>
+
+        <div class="print-section-title">Ammunition</div>
+        <table>
+            <tr>
+                <th>Type (rifle, shotgun, pistol)</th>
+                <th>Calibre/Gauge</th>
+                <th>Quantity (individual cartridges, not boxes)</th>
+            </tr>
+            <!-- MVP Dummy Ammo Data -->
+            <tr>
+                <td>Rifle</td>
+                <td>.308 Winchester</td>
+                <td>50</td>
+            </tr>
+        </table>
+
+        <div class="signature-box">
+            <strong>Applicant's declaration and signature</strong><br><br>
+            I declare that the information I have supplied for this application is true and correct.<br>
+            I acknowledge that the items listed in this application may only be transferred to a person authorised to possess them under New Zealand law.<br><br>
+            <strong>Signature:</strong> ___________________________ &nbsp;&nbsp;&nbsp;&nbsp; <strong>Date:</strong> ___________________________
+        </div>
+
+        <div class="signature-box" style="background:#f4f9f4; padding-bottom:30px;">
+            <strong>Section 2 & 3: Police use ONLY</strong><br><br>
+            [ &nbsp; ] Applicant ID verified &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] Licence sighted (NIA) &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] Address checked<br><br>
+            Authorisation emailed/mailed direct to seller: [ &nbsp; ]<br><br>
+            Officer Signature: ______________________ &nbsp;&nbsp; QID: ___________ &nbsp;&nbsp; Date: ____________<br><br>
+            Authorisation Expiry Date: ____________
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('mvp-checkout-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Construct Full Address
+        const street = document.getElementById('chk-street').value;
+        const suburb = document.getElementById('chk-suburb').value;
+        const city = document.getElementById('chk-city').value;
+        const postcode = document.getElementById('chk-postcode').value;
+        
+        let fullAddress = street;
+        if (suburb) fullAddress += ", " + suburb;
+        fullAddress += ", " + city + " " + postcode;
+
+        // Map Inputs to Print Outputs
+        document.getElementById('out-first').textContent = document.getElementById('chk-first').value;
+        document.getElementById('out-middle').textContent = document.getElementById('chk-middle').value;
+        document.getElementById('out-last').textContent = document.getElementById('chk-last').value;
+        document.getElementById('out-email').textContent = document.getElementById('chk-email').value;
+        document.getElementById('out-phone').textContent = document.getElementById('chk-phone').value;
+        
+        document.getElementById('out-lic-num').textContent = document.getElementById('chk-lic-num').value.toUpperCase();
+        document.getElementById('out-lic-ver').textContent = document.getElementById('chk-lic-ver').value;
+        document.getElementById('out-lic-exp').textContent = document.getElementById('chk-lic-exp').value;
+        document.getElementById('out-endorsements').textContent = document.getElementById('chk-endorsements').value;
+        
+        document.getElementById('out-dest').textContent = document.getElementById('chk-dest').value;
+        document.getElementById('out-address').textContent = fullAddress;
+        
+        // Generate random invoice number
+        document.getElementById('out-invoice').textContent = Math.floor(Math.random() * 90000) + 10000;
+
+        // Swap Views to Print Mode
+        document.getElementById('checkout-view').style.display = 'none';
+        document.getElementById('frm43a-view').style.display = 'block';
+
+        // Trigger Print Window
+        setTimeout(() => {
+            window.print();
+            window.onafterprint = function() {
+                document.getElementById('frm43a-view').style.display = 'none';
+                document.getElementById('checkout-view').style.display = 'block';
+            };
+        }, 300);
+    });
+</script>
+</body>
+</html>
