@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NZ Outdoors - Store & Form 43A Generator</title>
-    <!-- Include PDF-lib for exact coordinate text stamping -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         :root {
@@ -82,7 +81,7 @@
         <div class="step-bar">
             <span class="step active">1. Cart Items</span>
             <span class="step">2. Licence & Delivery</span>
-            <span class="step">3. Form 43A PDF</span>
+            <span class="step">3. Form 43A</span>
         </div>
 
         <table class="cart-table">
@@ -110,7 +109,7 @@
         <div class="step-bar">
             <span class="step">1. Cart Items</span>
             <span class="step active">2. Licence & Delivery</span>
-            <span class="step">3. Form 43A PDF</span>
+            <span class="step">3. Form 43A</span>
         </div>
 
         <div class="alert-box">
@@ -210,7 +209,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn">Generate Official Form 43A PDF</button>
+            <button type="submit" class="btn">Generate Official Form 43A</button>
             <button type="button" class="btn btn-outline" onclick="backToCart()">Return to Cart</button>
         </form>
     </div>
@@ -227,7 +226,7 @@
         <div class="step-bar">
             <span class="step">1. Cart Items</span>
             <span class="step">2. Licence & Delivery</span>
-            <span class="step active">3. Form 43A PDF</span>
+            <span class="step active">3. Form 43A</span>
         </div>
 
         <div style="text-align:center; padding: 10px 0 20px;">
@@ -246,7 +245,7 @@
             </ol>
         </div>
 
-        <a href="https://www.police.govt.nz/contact-us/stations" target="_blank" class="btn">Find your nearest Police Station</a>
+        <a href="https://www.police.govt.nz/contact-us/stations" target="_blank" class="btn" style="background:var(--primary); color:white;">Find your nearest Police Station</a>
         <button class="btn btn-outline" onclick="location.reload()">Start New Order</button>
     </div>
 </div>
@@ -301,18 +300,31 @@
         document.getElementById('view-cart').classList.add('active');
     }
 
-    // --- PDF GENERATION (STRICT HARDCODED COORDINATES) ---
+    // --- BULLETPROOF PDF GENERATION ---
     document.getElementById('checkout-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         document.getElementById('view-checkout').classList.remove('active');
         document.getElementById('loading-screen').style.display = 'block';
 
         try {
-            const formUrl = './FRM43A.pdf';
-            const existingPdfBytes = await fetch(formUrl).then(res => {
-                if(!res.ok) throw new Error("FRM43A.pdf not found.");
-                return res.arrayBuffer();
-            });
+            let existingPdfBytes;
+            
+            // ATTEMPT 1: Load local file
+            try {
+                const res = await fetch('FRM43A.pdf');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                existingPdfBytes = await res.arrayBuffer();
+            } catch (localError) {
+                console.warn("Local fetch failed (CORS/Network block). Routing through public proxy...", localError);
+                
+                // ATTEMPT 2: Fallback to the official Police URL via CORS proxy
+                const publicUrl = encodeURIComponent('https://www.firearmssafetyauthority.govt.nz/sites/default/files/2026-06/FRM43A-Mail%20Order%20Form%20-%20May%202026_0.pdf');
+                const proxyUrl = 'https://api.allorigins.win/raw?url=' + publicUrl;
+                
+                const proxyRes = await fetch(proxyUrl);
+                if (!proxyRes.ok) throw new Error("Proxy fetch failed. Unable to locate the PDF document.");
+                existingPdfBytes = await proxyRes.arrayBuffer();
+            }
 
             const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
             const pages = pdfDoc.getPages();
@@ -356,7 +368,7 @@
             };
 
             // ================= PAGE 1 =================
-            drawText(firstPage, formattedDate, 500, 765); // Date of application
+            drawText(firstPage, formattedDate, 500, 765); 
 
             // Applicant Details
             drawText(firstPage, buyer.last, 60, 695);
@@ -368,7 +380,7 @@
             else if (buyer.dest === 'Courier/Transport Depot') drawText(firstPage, 'X', 130, 650, 12);
             else drawText(firstPage, 'X', 252, 650, 12); // Me
 
-            drawText(firstPage, fullAddress, 185, 630, 9); // Delivery address
+            drawText(firstPage, fullAddress, 185, 630, 9); 
             drawText(firstPage, buyer.phone, 350, 630);
             drawText(firstPage, buyer.email, 350, 600);
 
@@ -379,18 +391,15 @@
             drawText(firstPage, buyer.endorsements, 350, 565);
             drawText(firstPage, invoiceNo, 450, 565);
 
-            // Supplier Details (Hardcoded for your shop)
+            // Supplier Details
             drawText(firstPage, "Outdoors", 60, 435);
             drawText(firstPage, "NZ", 240, 435);
             drawText(firstPage, "Shop", 420, 435);
-            
             drawText(firstPage, "NZ Outdoors Arms & Ammunition", 60, 375);
             drawText(firstPage, "45 Alpine Way, Queenstown 9300", 60, 405);
-            
             drawText(firstPage, "03 555 9999", 350, 435);
             drawText(firstPage, "sales@nzoutdoors.co.nz", 350, 405);
             drawText(firstPage, "Aramex NZ", 350, 375);
-            
             drawText(firstPage, "T9876543", 60, 345);
             drawText(firstPage, "03", 160, 345);
             drawText(firstPage, "12/12/2030", 220, 345);
@@ -411,17 +420,14 @@
             });
 
             // ================= PAGE 2 =================
-            // Draw a red outline box over the signature line to remind the customer to sign
             secondPage.drawRectangle({
                 x: 60, y: 395, width: 220, height: 25,
                 borderColor: PDFLib.rgb(0.8, 0, 0), borderWidth: 1.5
             });
             drawText(secondPage, "[ SIGN HERE IN PEN ]", 110, 404, 9);
-            
-            // Applicant Declaration Date
             drawText(secondPage, formattedDate, 440, 404);
 
-            // Save and trigger download
+            // Export & Download
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
             const link = document.createElement('a');
@@ -429,13 +435,13 @@
             link.download = `Form43A_Completed_${buyer.last}_${invoiceNo}.pdf`;
             link.click();
 
-            // Show success screen
+            // Transition UI
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('view-success').classList.add('active');
 
         } catch (err) {
-            console.error(err);
-            alert("Error generating PDF. Please ensure FRM43A.pdf is saved in the same folder as this webpage.");
+            console.error("PDF Generation Error:", err);
+            alert("Error generating PDF: " + err.message + "\n\nPlease check your console (F12) for more details.");
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('view-checkout').classList.add('active');
         }
